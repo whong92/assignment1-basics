@@ -1,5 +1,22 @@
 import os
 from typing import BinaryIO
+import regex as re
+from collections import Counter
+from dataclasses import dataclass
+
+from itertools import pairwise
+import numpy as np
+from multiprocessing import Pool
+from tqdm import tqdm
+
+SPECIAL_TOKENS = [
+    "<|endoftext|>"
+]
+
+PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+SPECIAL_TOKENS_RE = "|".join([re.escape(s) for s in SPECIAL_TOKENS])
+CHUNK_TOKEN = "<|endoftext|>"
+
 
 def find_chunk_boundaries(
     file: BinaryIO, 
@@ -49,14 +66,77 @@ def find_chunk_boundaries(
     # Make sure all boundaries are unique, but might be fewer than desired_num_chunks
     return sorted(set(chunk_boundaries))
 
-## Usage
-with open(..., "rb") as f:
-    boundaries = find_chunk_boundaries(
-        f, num_processes, "<|endoftext|>".encode("utf-8"))
-        
-    # The following is a serial implementation, but you can parallelize this 
-    # by sending each start/end pair to a set of processes.
-    for start, end in zip(boundaries[:-1], boundaries[1:]):
-        f.seek(start)
-        chunk = f.read(end - start).decode("utf-8", errors="ignore")
-        # Run pre-tokenization on your chunk and store the counts for each pre-token
+
+@dataclass
+class Pretoken:
+    string: str
+    indices: list[int]
+    pairs_set: set[tuple[int, int]]
+    count: int = 1  # how often this pretoken appears in corpus
+
+def count_pretokens(
+    fname: str,
+    chunk_start: int,
+    chunk_end: int,
+    special_tokens: list[str]
+) -> dict[str, int]:
+    with open(fname, "rb") as f:
+        f.seek(chunk_start)
+        chunk = f.read(chunk_end - chunk_start).decode("utf-8", errors="ignore")
+        pretoken_counts = Counter()
+        special_tokens_re = "|".join([re.escape(s) for s in special_tokens])
+        # remove special tokens and count
+        for c in tqdm(re.split(special_tokens_re, chunk)):
+            pretoken_counts.update(Counter(re.findall(PAT, c)))
+    return pretoken_counts
+
+def proc_pretokens(
+    pretoken_counts: list[tuple[str, int]], special_token_offset: int
+) -> list[Pretoken]:
+    ret = []
+    for pretoken_string, pretoken_count in pretoken_counts:
+        pretoken_indices = list(map(int, pretoken_string.encode("utf-8")))
+        pretoken_indices = [i + special_token_offset for i in pretoken_indices]
+        ret.append(
+            Pretoken(
+                string = pretoken_string,
+                indices = pretoken_indices,
+                count = pretoken_count,
+                pairs_set = set(pairwise(pretoken_indices))
+            )
+        )
+    return ret
+
+
+def split_list(l: list, n: int) -> list[list]:
+    arr = np.array(l, dtype=object)
+    return [ arr_split.tolist() for arr_split in np.array_split(arr, n)]
+
+
+def chunk_and_pretokenize(
+    fname: str,
+    special_tokens: list[int],
+    n_chunks: int,
+    n_workers: int = 10,
+) -> list[Pretoken]:
+    ## Usage
+    with open(fname, "rb") as f:
+        boundaries = find_chunk_boundaries(
+            f, n_chunks, CHUNK_TOKEN.encode("utf-8")
+        )
+
+    pretoken_counts = Counter()
+    pool = Pool(n_workers)
+    jobs = pool.starmap(
+        count_pretokens,
+        [
+            (
+                fname, start, end, special_tokens
+            )
+            for start, end in pairwise(boundaries)
+        ]
+    )
+    for chunk_pretoken_count in tqdm(jobs, total=n_chunks):
+        pretoken_counts.update(chunk_pretoken_count)
+
+    return proc_pretokens(list(pretoken_counts.items()), special_token_offset=len(special_tokens))
