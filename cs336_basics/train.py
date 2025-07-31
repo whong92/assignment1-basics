@@ -1,26 +1,26 @@
 import numpy as np
-from cs336_basics.data import get_batch_from_dataset_random
-from cs336_basics.transformer import TransformerLM
-from cs336_basics.checkpoint import load_checkpoint, save_checkpoint
-from cs336_basics.adamw import AdamWCosineSchedule
-from cs336_basics.cross_entropy import cross_entropy
 import json
 import os
 import torch
 import wandb
 from tqdm.auto import tqdm
-from pydantic import BaseModel, computed_field
 import logging
 from importlib.resources import as_file, files
 import yaml
 import click
+import shutil
+
+from cs336_basics.types import ExperimentConfig, DatasetConfig
+from cs336_basics.data import get_batch_from_dataset_random
+from cs336_basics.checkpoint import load_checkpoint, save_checkpoint, init_from_config
+from cs336_basics.cross_entropy import cross_entropy
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 for handler in logger.handlers[:]:
     logger.removeHandler(handler)
 
-
+TMP_DATA_DIR = "/tmp/temp-data-dir"
 
 def run_valid(
     valid_dataset: np.ndarray,
@@ -42,63 +42,6 @@ def run_valid(
             ypred = model(x)
             val_loss += cross_entropy(ypred, y, reduce=True).cpu().item()
     return val_loss
-
-
-class ModelConfig(BaseModel):
-    num_layers: int = 4
-    num_heads: int = 16
-    d_head: int = 32
-    d_ff: int = 1344
-    rope_theta: float = 10000
-
-    @computed_field
-    @property
-    def d_model(self) -> int:
-        return int(
-            self.num_heads * self.d_head
-        )
-
-
-class OptConfig(BaseModel):
-    max_lr: float = 1e-3
-    min_lr: float = 1e-3
-    warmup_iters: int = 0
-
-
-class TrainingConfig(BaseModel):
-    context_length: int = 256
-    batch_size: int = 32
-    num_tokens: int = 327_000_000
-    valid_num_tokens: int = 327_000
-
-    @computed_field
-    @property
-    def num_iters(self) -> int:
-        return int(
-            self.num_tokens / self.batch_size / self.context_length
-        )
-
-    @computed_field
-    @property
-    def valid_num_iters(self) -> int:
-        return int(
-            self.valid_num_tokens / self.batch_size / self.context_length
-        )
-
-class DatasetConfig(BaseModel):
-    train_dataset_path: str
-    valid_dataset_path: str
-    vocab_path: str
-
-
-class ExperimentConfig(BaseModel):
-    dataset: DatasetConfig
-    model: ModelConfig = ModelConfig()
-    opt: OptConfig = OptConfig()
-    training: TrainingConfig = TrainingConfig()
-    ckpt_dir: str
-    device: str = "cpu"
-    ckpt_every: int = 2000
 
 
 class Logger:
@@ -131,48 +74,47 @@ class Logger:
             logger.info(msg)
 
 
+def map_dataset_to_local(dataset_config: DatasetConfig) -> DatasetConfig:
+    os.makedirs(TMP_DATA_DIR, exist_ok=True)
+    new_dataset_config = DatasetConfig(
+        train_dataset_path = f"{TMP_DATA_DIR}/{os.path.basename(dataset_config.train_dataset_path)}",
+        valid_dataset_path = f"{TMP_DATA_DIR}/{os.path.basename(dataset_config.valid_dataset_path)}",
+        vocab_path = f"{TMP_DATA_DIR}/{os.path.basename(dataset_config.vocab_path)}",
+    )
+    shutil.copy(dataset_config.train_dataset_path, new_dataset_config.train_dataset_path)
+    shutil.copy(dataset_config.valid_dataset_path, new_dataset_config.valid_dataset_path)
+    shutil.copy(dataset_config.vocab_path, new_dataset_config.vocab_path)
+    return new_dataset_config
+
+
 def training_loop(
     config: ExperimentConfig,
-    mylogger: Logger
+    mylogger: Logger,
+    sync_dataset_to_local: bool = False
 ) -> None:
+    # for performance reasons we don't want to read directly to remote storage
+    if sync_dataset_to_local:
+        local_data_config = map_dataset_to_local(config.dataset)
+    else:
+        local_data_config = config.dataset
+
     dataset = np.memmap(
-        config.dataset.train_dataset_path,
+        local_data_config.train_dataset_path,
         dtype=np.uint16,
         mode="readonly"
     )
     valid_dataset = np.memmap(
-        config.dataset.valid_dataset_path,
+        local_data_config.valid_dataset_path,
         dtype=np.uint16,
         mode="readonly"
     )
 
     num_iters = config.training.num_iters
-    cosine_cycle_iters = max(num_iters - config.opt.warmup_iters, 0)
+    # always initialize from config
+    model, optimizer = init_from_config(config)
 
-    with open(config.dataset.vocab_path, 'r') as fp:
-        vocab_size = len(
-            json.load(fp)
-        )
-
-    model = TransformerLM(
-        vocab_size=vocab_size,
-        context_length=1000,
-        d_model=config.model.d_model,
-        num_layers=config.model.num_layers,
-        num_heads=config.model.num_heads,
-        d_ff=config.model.d_ff,
-        rope_theta=config.model.rope_theta,
-        device=config.device
-    )
-
-    optimizer = AdamWCosineSchedule(
-        model.parameters(),
-        max_lr=config.opt.max_lr,
-        min_lr=config.opt.min_lr,
-        warmup_iters=config.opt.warmup_iters,
-        cosine_cycle_iters=cosine_cycle_iters
-    )
-
+    # load from last checkpoint if exists
+    os.makedirs(config.ckpt_dir, exist_ok=True)
     # load last ckpt if exists
     last_ckpt_path = os.path.join(config.ckpt_dir, "last.ckpt")
     if os.path.exists(last_ckpt_path):
@@ -200,11 +142,11 @@ def training_loop(
 
         if (i + 1) % config.ckpt_every == 0:
             save_checkpoint(
-                model, optimizer, i, last_ckpt_path
+                last_ckpt_path, model, optimizer, i, config
             )
             ith_ckpt_path = os.path.join(config.ckpt_dir, f"iter-{i:05d}.ckpt")
             save_checkpoint(
-                model, optimizer, i, ith_ckpt_path
+                ith_ckpt_path, model, optimizer, i, config
             )
             val_loss = run_valid(
                 valid_dataset=valid_dataset,
@@ -222,15 +164,19 @@ def training_loop(
     "--config_name", type=click.STRING
 )
 @click.option(
-    "--use_wandb", type=click.BOOL, default=False
+    "--use_wandb", is_flag=True
 )
 @click.option(
     "--logfile", type=click.STRING, default=None
 )
+@click.option(
+    "--sync_dataset_to_local", is_flag=True
+)
 def training_main(
     config_name: str,
     use_wandb: bool = False,
-    logfile: str | None = None
+    logfile: str | None = None,
+    sync_dataset_to_local: bool = False,
 ) -> None:
 
     with as_file(files("cs336_basics.configs") / f"{config_name}.yaml") as path:
@@ -251,6 +197,7 @@ def training_main(
     training_loop(
         config=config,
         mylogger=Logger(use_wandb=use_wandb, file=logfile),
+        sync_dataset_to_local=sync_dataset_to_local,
     )
 
 

@@ -90,7 +90,7 @@ def top_k_top_p_filtering(
         )
 
         # Remove tokens with cumulative probability above the threshold
-        sorted_indices_to_remove = cumulative_probs < top_p
+        sorted_indices_to_remove = cumulative_probs > top_p
 
         indices_to_remove = torch.zeros_like(p, dtype=torch.bool).scatter_(
             dim=-1, index=sorted_indices, src=sorted_indices_to_remove
@@ -153,12 +153,14 @@ class TransformerLM(nn.Module):
         top_p: float = 1,
         max_num_tokens: int = 4096
     ) -> Int[Tensor, "sequence_length_out"]:
-        in_len = x.shape[1]
-        for _ in range(max_num_tokens):
-            y = self(x.to(self.device))[:, -1]  # batch_size, vocab_size
-            p = softmax(y, dim=-1, tau=tau)
-            p = top_k_top_p_filtering(p, top_p=top_p)
-            tok = torch.multinomial(p, num_samples=1).to('cpu')
-            x = torch.concat((x, tok), dim=-1)
-        return x[:, in_len:]
+        with torch.no_grad():
+            x = x.to("cpu")
+            in_len = x.shape[1]
+            for _ in range(max_num_tokens):
+                y = self(x.to(self.device))[:, -1]  # batch_size, vocab_size
+                p = softmax(y, dim=-1, tau=tau)
+                p = top_k_top_p_filtering(p, top_p=top_p)
+                tok = torch.multinomial(p, num_samples=1).to('cpu')
+                x = torch.concat((x, tok), dim=-1)
+        return x[:, in_len:].numpy().tolist()
 

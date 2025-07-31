@@ -1,9 +1,9 @@
 dataset:
-  train_dataset_path: "/home/ong/personal/standford-cs336-2025/assignment1-basics/data/TinyStoriesV2-GPT4-train.tok.npy"
-  valid_dataset_path: "/home/ong/personal/standford-cs336-2025/assignment1-basics/data/TinyStoriesV2-GPT4-valid.tok.npy"
-  vocab_path: "tests/fixtures/gpt2_vocab.json"
+  train_dataset_path: "/content/drive/MyDrive/colab_data/cs336_assignment1/TinyStoriesTrain_10k/TinyStoriesV2-GPT4-train.tok.npy"
+  valid_dataset_path: "/content/drive/MyDrive/colab_data/cs336_assignment1/TinyStoriesTrain_10k/TinyStoriesV2-GPT4-valid.tok.npy"
+  vocab_path: "/content/drive/MyDrive/colab_data/cs336_assignment1/TinyStoriesTrain_10k/vocab.json"
 device: "cuda"
-ckpt_dir: "checkpoints"
+ckpt_dir: "/content/drive/MyDrive/colab_data/cs336_assignment1/experiment_ckpts/default_full"
 ckpt_every: 1000
 training:
   num_tokens: 327000000
