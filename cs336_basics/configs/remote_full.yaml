@@ -4,7 +4,7 @@ dataset:
   vocab_path: "/content/drive/MyDrive/colab_data/cs336_assignment1/TinyStoriesTrain_10k/vocab.json"
 device: "cuda"
 ckpt_dir: "/content/drive/MyDrive/colab_data/cs336_assignment1/experiment_ckpts/default_full"
-ckpt_every: 1000
+ckpt_every: 200
 training:
   num_tokens: 327000000
   valid_num_tokens: 327000
