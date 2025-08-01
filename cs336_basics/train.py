@@ -126,7 +126,6 @@ def training_loop(
     else:
         ckpt_iter = 0
 
-    model.compile()
     model.train()
 
     pbar = tqdm(range(num_iters), position=0, leave=False)
