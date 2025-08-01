@@ -2,7 +2,7 @@ import json
 
 from cs336_basics.adamw import AdamWCosineSchedule
 from cs336_basics.transformer import TransformerLM
-from cs336_basics.types import ExperimentConfig
+from cs336_basics.config_types import ExperimentConfig
 import torch
 import typing
 import os

@@ -10,7 +10,7 @@ import yaml
 import click
 import shutil
 
-from cs336_basics.types import ExperimentConfig, DatasetConfig
+from cs336_basics.config_types import ExperimentConfig, DatasetConfig
 from cs336_basics.data import get_batch_from_dataset_random
 from cs336_basics.checkpoint import load_checkpoint, save_checkpoint, init_from_config
 from cs336_basics.cross_entropy import cross_entropy
@@ -125,6 +125,9 @@ def training_loop(
         ckpt_iter = load_checkpoint(last_ckpt_path, model=model, optimizer=optimizer)
     else:
         ckpt_iter = 0
+
+    model.compile()
+    model.train()
 
     pbar = tqdm(range(num_iters), position=0, leave=False)
     mylogger.pbar = pbar

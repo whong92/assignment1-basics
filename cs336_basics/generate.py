@@ -1,7 +1,7 @@
 from cs336_basics.transformer import TransformerLM
 from cs336_basics.checkpoint import load_checkpoint_and_config, init_from_config
 from cs336_basics.tokenizer import Tokenizer, SPECIAL_TOKENS
-from cs336_basics.types import ExperimentConfig
+from cs336_basics.config_types import ExperimentConfig
 import torch
 from importlib.resources import as_file, files
 import yaml
