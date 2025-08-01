@@ -29,7 +29,7 @@ def scaled_dot_prod_attn(
         Q, K, " ... queries d_k, ... keys d_k -> ... queries keys"
     ) / math.sqrt(d_k)
     if mask is not None:
-        dot_prod[~mask] += -float("inf")
+      dot_prod.masked_fill_(~mask, -float("inf"))
     # softmax over keys
     attn = softmax(dot_prod, dim=-1)
     return einsum(
@@ -63,6 +63,7 @@ class MultiHeadSA(nn.Module):
             dtype=dtype
         )
         self.pos_emb = pos_emb
+        self.device = device
 
     def _load_from_state_dict(
         self,
@@ -127,6 +128,7 @@ class MultiHeadSA(nn.Module):
             q = self.pos_emb(q, token_positions)
             k = self.pos_emb(k, token_positions)
 
+        # TODO: cache the creation of mask
         mask = torch.triu(
             torch.ones(
                 size=(seq_len, seq_len),
@@ -135,7 +137,7 @@ class MultiHeadSA(nn.Module):
             diagonal=0
         ).T
         rep_pattern = ' '.join([str(i) for i in batch_dims + [self.num_heads]])
-        mask = repeat(mask, f"m n -> {rep_pattern} m n")
+        mask = repeat(mask, f"m n -> {rep_pattern} m n").to(self.device)
         attn_v = scaled_dot_prod_attn(
             q, k, v, mask
         )
