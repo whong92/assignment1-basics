@@ -4,13 +4,11 @@ dataset:
   vocab_path: "/content/drive/MyDrive/colab_data/cs336_assignment1/TinyStoriesTrain_10k/vocab.json"
 device: "cuda"
 ckpt_dir: "/content/drive/MyDrive/colab_data/cs336_assignment1/experiment_ckpts/remote_test"
-ckpt_every: 1000
+ckpt_every: 20
 training:
   num_tokens: 327000
-  valid_num_tokens: 3270
-  batch_size: 32
-  context_length: 100
+  valid_num_tokens: 32700
 model:
-  num_heads: 4
+  num_heads: 16
   d_head: 32
-  d_ff: 384
+  d_ff: 1344

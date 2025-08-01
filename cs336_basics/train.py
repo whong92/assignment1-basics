@@ -94,7 +94,9 @@ def training_loop(
 ) -> None:
     # for performance reasons we don't want to read directly to remote storage
     if sync_dataset_to_local:
+        logger.info(f"Syncing remote dataset to local dataset start")
         local_data_config = map_dataset_to_local(config.dataset)
+        logger.info(f"Syncing remote dataset to local dataset end")
     else:
         local_data_config = config.dataset
 
