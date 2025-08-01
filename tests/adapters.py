@@ -252,8 +252,6 @@ def run_rope(
         d_k=d_k,
         max_seq_len=max_seq_len
     )
-    print(" ======== ")
-    print(in_query_or_key.shape, token_positions.shape)
     return m(in_query_or_key, token_positions)
 
 
