@@ -31,17 +31,19 @@ def run_valid(
     model: torch.nn.Module
 ) -> float:
     val_loss = 0.
-    for _ in tqdm(range(num_iters), position=1, leave=False):
-        x, y = get_batch_from_dataset_random(
-            dataset=valid_dataset,
-            batch_size=batch_size,
-            context_length=context_length,
-            device=device,
-        )
-        with torch.no_grad():
+    model.eval()
+    with torch.no_grad():
+        for _ in tqdm(range(num_iters), position=1, leave=False):
+            x, y = get_batch_from_dataset_random(
+                dataset=valid_dataset,
+                batch_size=batch_size,
+                context_length=context_length,
+                device=device,
+            )
             ypred = model(x)
             val_loss += cross_entropy(ypred, y, reduce=True).cpu().item()
-    return val_loss
+    model.train()
+    return val_loss / num_iters
 
 
 class Logger:
@@ -140,7 +142,7 @@ def training_loop(
         loss = cross_entropy(ypred, y, reduce=True)
         loss.backward()
         optimizer.step()
-        mylogger.log_metrics({'train/loss': loss.cpu().item()}, iter=i)
+        # mylogger.log_metrics({'train/loss': loss.cpu().item()}, iter=i)
 
         if (i + 1) % config.ckpt_every == 0:
             save_checkpoint(
