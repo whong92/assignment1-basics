@@ -1,0 +1,16 @@
+dataset:
+  train_dataset_path: "/content/drive/MyDrive/colab_data/cs336_assignment1/TinyStoriesTrain_10k/TinyStoriesV2-GPT4-train.tok.npy"
+  valid_dataset_path: "/content/drive/MyDrive/colab_data/cs336_assignment1/TinyStoriesTrain_10k/TinyStoriesV2-GPT4-valid.tok.npy"
+  vocab_path: "/content/drive/MyDrive/colab_data/cs336_assignment1/TinyStoriesTrain_10k/vocab.json"
+device: "cuda"
+ckpt_dir: "/content/drive/MyDrive/colab_data/cs336_assignment1/experiment_ckpts/remote_test"
+ckpt_every: 1000
+training:
+  num_tokens: 327000
+  valid_num_tokens: 3270
+  batch_size: 32
+  context_length: 100
+model:
+  num_heads: 4
+  d_head: 32
+  d_ff: 384
