@@ -122,7 +122,7 @@ def training_loop(
     # load last ckpt if exists
     last_ckpt_path = os.path.join(config.ckpt_dir, "last.ckpt")
     if os.path.exists(last_ckpt_path):
-        ckpt_iter = load_checkpoint(last_ckpt_path, model=model, optimizer=optimizer)
+        ckpt_iter = load_checkpoint(last_ckpt_path, model=model, optimizer=optimizer, map_location=config.device)
     else:
         ckpt_iter = 0
 

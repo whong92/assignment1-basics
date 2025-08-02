@@ -1,7 +1,8 @@
 dataset:
   train_dataset_path: "/Users/waihongong/github/assignment1-basics/data/TinyStoriesTrain_10k/TinyStoriesV2-GPT4-valid.tok.npy"
   valid_dataset_path: "/Users/waihongong/github/assignment1-basics/data/TinyStoriesTrain_10k/TinyStoriesV2-GPT4-valid.tok.npy"
-  vocab_path: "tests/fixtures/gpt2_vocab.json"
+  vocab_path: "/Users/waihongong/github/assignment1-basics/data/TinyStoriesTrain_10k/vocab.json"
+  merges_path: "/Users/waihongong/github/assignment1-basics/data/TinyStoriesTrain_10k/merges.txt"
 device: "mps"
 ckpt_dir: "checkpoints"
 ckpt_every: 20

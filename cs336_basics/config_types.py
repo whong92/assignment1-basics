@@ -47,6 +47,7 @@ class DatasetConfig(BaseModel):
     train_dataset_path: str
     valid_dataset_path: str
     vocab_path: str
+    merges_path: str
 
 
 class ExperimentConfig(BaseModel):

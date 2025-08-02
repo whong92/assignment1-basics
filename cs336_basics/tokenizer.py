@@ -204,22 +204,19 @@ class Tokenizer:
         self.pretok_to_idx_cache: dict[str, list[int]] = {}
 
     @classmethod
-    def from_files(
+    def from_serialized_vocab(
         cls,
-        vocab_filepath: str,
-        merges_filepath: str,
-        special_tokens: list[str] | None = None,
+        vocab_ser: str,
+        merges_ser: str,
+        special_tokens: list[str],
     ) -> "Tokenizer":
-        """Copied from test_tokenizer.py"""
         gpt2_byte_decoder = {v: k for k, v in gpt2_bytes_to_unicode().items()}
-        with open(vocab_filepath) as vocab_f:
-            gpt2_vocab = json.load(vocab_f)
+        gpt2_vocab = json.loads(vocab_ser)
         gpt2_bpe_merges = []
-        with open(merges_filepath) as f:
-            for line in f:
-                cleaned_line = line.rstrip()
-                if cleaned_line and len(cleaned_line.split(" ")) == 2:
-                    gpt2_bpe_merges.append(tuple(cleaned_line.split(" ")))
+        for line in merges_ser.splitlines():
+            cleaned_line = line.rstrip()
+            if cleaned_line and len(cleaned_line.split(" ")) == 2:
+                gpt2_bpe_merges.append(tuple(cleaned_line.split(" ")))
         # The GPT-2 tokenizer uses a remapped unicode encoding for bytes. Let's
         # just return the original bytes, so we don't force students to use
         # any particular encoding scheme.
@@ -246,6 +243,7 @@ class Tokenizer:
             (vocab_inv[b1], vocab_inv[b2], vocab_inv[b1 + b2])
             for b1, b2 in merges
         ]
+
         return Tokenizer(
             BPETokenizerParams(
                 vocab=vocab,
@@ -253,6 +251,21 @@ class Tokenizer:
                 special_tokens=special_tokens
             )
         )
+
+    @classmethod
+    def from_files(
+        cls,
+        vocab_filepath: str,
+        merges_filepath: str,
+        special_tokens: list[str] | None = None,
+    ) -> "Tokenizer":
+        """Copied from test_tokenizer.py"""
+        with open(vocab_filepath) as vocab_f, open(merges_filepath) as f:
+            return cls.from_serialized_vocab(
+                vocab_ser=vocab_f.read(),
+                merges_ser=f.read(),
+                special_tokens=special_tokens
+            )
 
 
     def encode(self, text: str) -> list[int]:
@@ -482,14 +495,4 @@ def train_bpe_main(
 
 
 if __name__ == "__main__":
-
-    # vocab_filepath="/home/ong/personal/standford-cs336-2025/assignment1-basics/tests/fixtures/gpt2_vocab.json"
-    # merges_filepath="/home/ong/personal/standford-cs336-2025/assignment1-basics/tests/fixtures/gpt2_merges.txt"
-    # input_fpath = '/home/ong/personal/standford-cs336-2025/assignment1-basics/data/TinyStoriesV2-GPT4-train.txt'
-    # output_path = '/home/ong/personal/standford-cs336-2025/assignment1-basics/data/TinyStoriesV2-GPT4-train.tok.npy'
-    # temp_output_path = '/tmp/tokenize'
-    # n_chunks = 5
-
-    # data/TinyStoriesV2-GPT4-val.txt
-
     cli()
