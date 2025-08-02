@@ -189,11 +189,19 @@ def training_loop(
 @click.option(
     "--sync_dataset_to_local", is_flag=True
 )
+@click.option(
+    "--use_torch_compile", is_flag=True
+)
+@click.option(
+    "--use_tensorcores", is_flag=True
+)
 def training_main(
     config_name: str,
     use_wandb: bool = False,
     logfile: str | None = None,
     sync_dataset_to_local: bool = False,
+    use_torch_compile: bool = False,
+    use_tensorcores: bool = False,
 ) -> None:
 
     with as_file(files("cs336_basics.configs") / f"{config_name}.yaml") as path:
@@ -215,6 +223,8 @@ def training_main(
         config=config,
         mylogger=Logger(use_wandb=use_wandb, file=logfile),
         sync_dataset_to_local=sync_dataset_to_local,
+        use_torch_compile=use_torch_compile,
+        use_tensorcores=use_tensorcores,
     )
 
 
