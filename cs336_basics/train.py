@@ -94,7 +94,9 @@ def map_dataset_to_local(dataset_config: DatasetConfig) -> DatasetConfig:
 def training_loop(
     config: ExperimentConfig,
     mylogger: Logger,
-    sync_dataset_to_local: bool = False
+    sync_dataset_to_local: bool = False,
+    use_torch_compile: bool = False,
+    use_tensorcores: bool = False,
 ) -> None:
     # for performance reasons we don't want to read directly to remote storage
     if sync_dataset_to_local:
@@ -132,7 +134,10 @@ def training_loop(
     if os.path.exists(best_ckpt_path):
         best_val_loss = torch.load(best_ckpt_path, map_location=config.device)["val_loss"]
 
-    # model.compile()
+    if use_torch_compile:
+        model.compile()
+    if use_tensorcores:
+        torch.set_float32_matmul_precision('high')
     model.train()
 
     pbar = tqdm(range(num_iters), position=0, leave=False)
