@@ -1,6 +1,6 @@
 dataset:
   train_dataset_path: "/content/drive/MyDrive/colab_data/cs336_assignment1/TinyStoriesTrain_10k/TinyStoriesV2-GPT4-valid-small.tok.npy"
-  valid_dataset_path: "/content/drive/MyDrive/colab_data/cs336_assignment1/TinyStoriesTrain_10k/TinyStoriesV2-GPT4-valid-smalltok.npy"
+  valid_dataset_path: "/content/drive/MyDrive/colab_data/cs336_assignment1/TinyStoriesTrain_10k/TinyStoriesV2-GPT4-valid-small.tok.npy"
   vocab_path: "/content/drive/MyDrive/colab_data/cs336_assignment1/TinyStoriesTrain_10k/vocab.json"
   merges_path: "/content/drive/MyDrive/colab_data/cs336_assignment1/TinyStoriesTrain_10k/merges.txt"
 device: "cuda"
