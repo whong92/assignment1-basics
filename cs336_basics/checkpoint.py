@@ -64,6 +64,7 @@ def save_checkpoint(
     model: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
     iteration: int,
+    val_loss: float | None = None,
     config: ExperimentConfig | None = None
 ) -> None:
     tokenizer_serialized = {
@@ -78,6 +79,7 @@ def save_checkpoint(
             "iteration": iteration,
             "config": config.model_dump(mode='json') if config else None,
             "tokenizer": tokenizer_serialized,
+            "val_loss": val_loss if val_loss is not None else None,
         },
         out
     )

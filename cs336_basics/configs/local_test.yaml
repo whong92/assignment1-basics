@@ -7,7 +7,7 @@ device: "mps"
 ckpt_dir: "checkpoints"
 ckpt_every: 20
 training:
-  num_tokens: 100000
+  num_tokens: 300000
   valid_num_tokens: 3270
   batch_size: 32
   context_length: 100

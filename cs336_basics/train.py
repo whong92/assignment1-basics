@@ -123,12 +123,16 @@ def training_loop(
     os.makedirs(config.ckpt_dir, exist_ok=True)
     # load last ckpt if exists
     last_ckpt_path = os.path.join(config.ckpt_dir, "last.ckpt")
+    ckpt_iter = 0
     if os.path.exists(last_ckpt_path):
         ckpt_iter = load_checkpoint(last_ckpt_path, model=model, optimizer=optimizer, map_location=config.device)
-    else:
-        ckpt_iter = 0
 
-    model.compile()
+    best_val_loss = float("inf")
+    best_ckpt_path = os.path.join(config.ckpt_dir, "best.ckpt")
+    if os.path.exists(best_ckpt_path):
+        best_val_loss = torch.load(best_ckpt_path, map_location=config.device)["val_loss"]
+
+    # model.compile()
     model.train()
 
     pbar = tqdm(range(num_iters), position=0, leave=False)
@@ -147,16 +151,8 @@ def training_loop(
         loss = cross_entropy(ypred, y, reduce=True)
         loss.backward()
         optimizer.step()
-        # mylogger.log_metrics({'train/loss': loss.cpu().item()}, iter=i)
 
         if (i + 1) % config.ckpt_every == 0:
-            save_checkpoint(
-                last_ckpt_path, model, optimizer, i, config
-            )
-            ith_ckpt_path = os.path.join(config.ckpt_dir, f"iter-{i:05d}.ckpt")
-            save_checkpoint(
-                ith_ckpt_path, model, optimizer, i, config
-            )
             val_loss = run_valid(
                 valid_dataset=valid_dataset,
                 num_iters=config.training.valid_num_iters,
@@ -165,6 +161,13 @@ def training_loop(
                 device=config.device,
                 model=model
             )
+            save_checkpoint(
+                last_ckpt_path, model, optimizer, i, val_loss, config
+            )
+            if val_loss < best_val_loss:
+                mylogger.log_metrics({"message": f"Saving best checkpoint so far at iter={i} val_loss={val_loss}"}, iter=i)
+                best_val_loss = val_loss
+                save_checkpoint(best_ckpt_path, model, optimizer, i, val_loss, config)
             mylogger.log_metrics({'val/loss': val_loss}, iter=i)
 
 
