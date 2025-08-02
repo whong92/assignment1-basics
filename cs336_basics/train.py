@@ -82,10 +82,12 @@ def map_dataset_to_local(dataset_config: DatasetConfig) -> DatasetConfig:
         train_dataset_path = f"{TMP_DATA_DIR}/{os.path.basename(dataset_config.train_dataset_path)}",
         valid_dataset_path = f"{TMP_DATA_DIR}/{os.path.basename(dataset_config.valid_dataset_path)}",
         vocab_path = f"{TMP_DATA_DIR}/{os.path.basename(dataset_config.vocab_path)}",
+        merges_path=f"{TMP_DATA_DIR}/{os.path.basename(dataset_config.merges_path)}",
     )
     shutil.copy(dataset_config.train_dataset_path, new_dataset_config.train_dataset_path)
     shutil.copy(dataset_config.valid_dataset_path, new_dataset_config.valid_dataset_path)
     shutil.copy(dataset_config.vocab_path, new_dataset_config.vocab_path)
+    shutil.copy(dataset_config.merges_path, new_dataset_config.merges_path)
     return new_dataset_config
 
 
