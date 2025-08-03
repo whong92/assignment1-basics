@@ -4,7 +4,7 @@ dataset:
   vocab_path: "/content/drive/MyDrive/colab_data/cs336_assignment1/TinyStoriesTrain_10k/vocab.json"
   merges_path: "/content/drive/MyDrive/colab_data/cs336_assignment1/TinyStoriesTrain_10k/merges.txt"
 device: "cuda"
-ckpt_dir: "/content/drive/MyDrive/colab_data/cs336_assignment1/experiment_ckpts/remote_full_lr_1e-3"
+ckpt_dir: "/content/drive/MyDrive/colab_data/cs336_assignment1/experiment_ckpts/remote_full_lr_3e-4"
 ckpt_every: 200
 training:
   num_tokens: 327000000
