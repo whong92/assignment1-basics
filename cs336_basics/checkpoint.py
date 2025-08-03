@@ -46,6 +46,8 @@ def load_checkpoint_and_config(
     map_location: str | None = None,
 ) -> tuple[TransformerLM, torch.optim.Optimizer, Tokenizer, int]:
     ckpt = torch.load(src, map_location=map_location)
+    assert ckpt["config"] is not None
+    assert ckpt["tokenizer"] is not None
     config = ExperimentConfig.model_validate(ckpt["config"])
     model, optimizer = init_from_config(config)
     model.load_state_dict(ckpt["model"])
@@ -67,18 +69,20 @@ def save_checkpoint(
     val_loss: float | None = None,
     config: ExperimentConfig | None = None
 ) -> None:
-    tokenizer_serialized = {
-        "vocab": open(config.dataset.vocab_path).read(),
-        "merges": open(config.dataset.merges_path).read(),
-        "special_tokens": SPECIAL_TOKENS
-    }
+    tokenizer_serialized = None
+    if config is not None:
+        tokenizer_serialized = {
+            "vocab": open(config.dataset.vocab_path).read(),
+            "merges": open(config.dataset.merges_path).read(),
+            "special_tokens": SPECIAL_TOKENS
+        }
     torch.save(
         {
             "model": model.state_dict(),
             "optimizer": optimizer.state_dict(),
             "iteration": iteration,
             "config": config.model_dump(mode='json') if config else None,
-            "tokenizer": tokenizer_serialized,
+            "tokenizer": tokenizer_serialized if tokenizer_serialized is not None else None,
             "val_loss": val_loss if val_loss is not None else None,
         },
         out
