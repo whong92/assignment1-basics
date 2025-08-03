@@ -16,4 +16,4 @@ model:
 opt:
   max_lr: 1e-2
   min_lr: 1e-3
-  warmup_iters: 5000
+  warmup_iters: 300

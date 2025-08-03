@@ -15,3 +15,7 @@ model:
   num_heads: 4
   d_head: 32
   d_ff: 384
+opt:
+  max_lr: 1e-3
+  min_lr: 1e-4
+  warmup_iters: 10
