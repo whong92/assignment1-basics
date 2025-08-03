@@ -1,0 +1,19 @@
+dataset:
+  train_dataset_path: "/content/drive/MyDrive/colab_data/cs336_assignment1/TinyStoriesTrain_10k/TinyStoriesV2-GPT4-train.tok.npy"
+  valid_dataset_path: "/content/drive/MyDrive/colab_data/cs336_assignment1/TinyStoriesTrain_10k/TinyStoriesV2-GPT4-valid.tok.npy"
+  vocab_path: "/content/drive/MyDrive/colab_data/cs336_assignment1/TinyStoriesTrain_10k/vocab.json"
+  merges_path: "/content/drive/MyDrive/colab_data/cs336_assignment1/TinyStoriesTrain_10k/merges.txt"
+device: "cuda"
+ckpt_dir: "/content/drive/MyDrive/colab_data/cs336_assignment1/experiment_ckpts/remote_full_lr_5e-3"
+ckpt_every: 200
+training:
+  num_tokens: 327000000
+  valid_num_tokens: 327000
+model:
+  num_heads: 16
+  d_head: 32
+  d_ff: 1344
+opt:
+  max_lr: 5e-3
+  min_lr: 5e-4
+  warmup_iters: 300
