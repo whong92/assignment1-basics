@@ -43,10 +43,10 @@ class AdamWCosineSchedule(torch.optim.Optimizer):
         min_lr: float = 1e-3,
         warmup_iters: int = 0,
         cosine_cycle_iters: int = 1,
-        betas: tuple[float, float] = (0.9, 0.999),
+        betas: tuple[float, float] = (0.9, 0.95),
         eps: float = 1e-8,
-        weight_decay: float = 1e-2,
-        max_grad_l2_norm: float = 1e3
+        weight_decay: float = 1e-1,
+        max_grad_l2_norm: float = 1.0
     ):
         if min_lr < 0 or max_lr < 0 or min_lr > max_lr:
             raise ValueError(f"Invalid learning rates: {min_lr} {max_lr}")
